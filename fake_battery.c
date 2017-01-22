@@ -430,7 +430,7 @@ static int __init fake_battery_init(void)
     return 0;
 failed:
     while (--i >= 0)
-        power_supply_unregister(&supplies[i]);
+        power_supply_unregister(supplies[i]);
     return ret;
 }
 
@@ -453,7 +453,7 @@ static void __exit fake_battery_exit(void)
     int i;
 
     for (i = 0; i < ARRAY_SIZE(supplies); i++)
-        power_supply_unregister(&supplies[i]);
+        power_supply_unregister(supplies[i]);
 
     module_initialized = false;
 
