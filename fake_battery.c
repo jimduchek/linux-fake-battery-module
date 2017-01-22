@@ -39,6 +39,8 @@ fake_ac_get_property(struct power_supply *psy,
         enum power_supply_property psp,
         union power_supply_propval *val);
 
+static bool module_initialized;
+
 static struct battery_status {
     int status;
     int capacity_level;
@@ -90,11 +92,6 @@ static enum power_supply_property fake_ac_properties[] = {
     POWER_SUPPLY_PROP_ONLINE,
 };
 
-static char *test_power_ac_supplied_to[] = {
-        "BAT0",
-        "BAT1",
-};
-
 static struct power_supply descriptions[] = {
     {
         .name = "BAT0",
@@ -115,7 +112,7 @@ static struct power_supply descriptions[] = {
     {
         .name = "AC0",
         .type = POWER_SUPPLY_TYPE_MAINS,
-        .supplied_to = test_power_ac_supplied_to,
+        .supplied_to = fake_ac_supplies,
         .num_supplicants = ARRAY_SIZE(test_power_ac_supplied_to),
         .properties = fake_ac_properties,
         .num_properties = ARRAY_SIZE(fake_ac_properties),
@@ -433,13 +430,11 @@ static int __init fake_battery_init(void)
     return 0;
 failed:
     while (--i >= 0)
-        power_supply_unregister(&test_power_supplies[i]);
+        power_supply_unregister(&supplies[i]);
     return ret;
 }
 
-
-
-static void __exit
+/*static void __exit
 fake_battery_exit(void)
 {
     int i;
@@ -449,6 +444,18 @@ fake_battery_exit(void)
     for(i = ARRAY_SIZE(descriptions) - 1; i >= 0; i--) {
         power_supply_unregister(supplies[i]);
     }
+
+    printk(KERN_INFO "unloaded fake_battery module\n");
+}*/
+
+static void __exit fake_battery_exit(void)
+{
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(supplies); i++)
+        power_supply_unregister(&supplies[i]);
+
+    module_initialized = false;
 
     printk(KERN_INFO "unloaded fake_battery module\n");
 }
