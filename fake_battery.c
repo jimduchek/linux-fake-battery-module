@@ -90,7 +90,12 @@ static enum power_supply_property fake_ac_properties[] = {
     POWER_SUPPLY_PROP_ONLINE,
 };
 
-static struct power_supply_desc descriptions[] = {
+static char *test_power_ac_supplied_to[] = {
+        "BAT0",
+        "BAT1",
+};
+
+static struct power_supply descriptions[] = {
     {
         .name = "BAT0",
         .type = POWER_SUPPLY_TYPE_BATTERY,
@@ -110,18 +115,11 @@ static struct power_supply_desc descriptions[] = {
     {
         .name = "AC0",
         .type = POWER_SUPPLY_TYPE_MAINS,
+        .supplied_to = test_power_ac_supplied_to,
+        .num_supplicants = ARRAY_SIZE(test_power_ac_supplied_to),
         .properties = fake_ac_properties,
         .num_properties = ARRAY_SIZE(fake_ac_properties),
         .get_property = fake_ac_get_property,
-    },
-};
-
-static struct power_supply_config configs[] = {
-    { },
-    { },
-    {
-        .supplied_to = fake_ac_supplies,
-        .num_supplicants = ARRAY_SIZE(fake_ac_supplies),
     },
 };
 
@@ -386,7 +384,7 @@ fake_ac_get_property(struct power_supply *psy,
     return 0;
 }
 
-static int __init
+/*static int __init
 fake_battery_init(void)
 {
     int result;
@@ -415,7 +413,31 @@ error:
     }
     misc_deregister(&control_device);
     return -1;
+}*/
+
+static int __init fake_battery_init(void)
+{
+    int i;
+    int ret;
+
+    for (i = 0; i < ARRAY_SIZE(descriptions); i++) {
+        ret = power_supply_register(NULL, &descriptions[i]);
+        if (ret) {
+            pr_err("%s: failed to register %s\n", __func__,
+                    descriptions[i].name);
+            goto failed;
+        }
+    }
+
+    module_initialized = true;
+    return 0;
+failed:
+    while (--i >= 0)
+        power_supply_unregister(&test_power_supplies[i]);
+    return ret;
 }
+
+
 
 static void __exit
 fake_battery_exit(void)
